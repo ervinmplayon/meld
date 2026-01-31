@@ -30,6 +30,12 @@ struct NonEksRow {
     repo_url: String,
     #[serde(rename = "Is Archived")]
     is_archived: String,
+
+    // Backups for last committer and last commit date
+    #[serde(rename = "Last Committer")]
+    last_committer: String,
+    #[serde(rename = "Last Commit Date")]
+    last_commit_date: String,
 }
 
 #[derive(Serialize, Default)]
@@ -49,6 +55,62 @@ struct FinalRow {
     is_archived: String,
 }
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> Result<(), Box<dyn Error>> {
+    let base_path = home::home_dir().unwrap().join("Documents/csv/github");
+    let owners_path = base_path.join("repo_owners.csv");
+    let non_eks_path = base_path.join("non_eks.csv");
+    let output_path = base_path.join("ghub_consolidated.csv");
+
+    // Load repo_owners into a HashMap with De-duplication logic
+    let mut rdr = csv::Reader::from_path(owners_path)?;
+    let mut owners_map: HashMap<String, RepoOwnerRow> = HashMap:: new();
+
+    for result in rdr.deserialize() {
+        let record: RepoOwnerRow = result?;
+        let key = record.repo.to_lowercase();
+
+        // Returns Some(&value), unwraps that value and binds it to a new local variable
+        if let Some(existing) = owners_map.get(&key) {
+            // Parse dates to compare which is more recent
+            let current_dt = NaiveDate::parse_from_str(&record.last_commit_date, "%Y-%m-%d").unwrap_or(NaiveDate::MIN);
+            let existing_dt = NaiveDate::parse_from_str(&existing.last_commit_date, "%Y-%m-%d").unwrap_or(NaiveDate::MIN);
+
+            if current_dt > existing_dt {
+                owners_map.insert(key, record);
+            }
+        } else {
+            owners_map.insert(key, record);
+        }
+    }
+
+    // Non-EKS (The primary driver for the Left Join)
+    let mut rdr = csv::Reader::from_path(non_eks_path)?;
+    let mut wtr = csv::Writer::from_path(output_path)?;
+
+    for result in rdr.deserialize() {
+        let non_eks: NonEksRow = result?;
+        let lookup_key = non_eks.repo_name.to_lowercase();
+        let owner = owners_map.get(&lookup_key);
+
+        let final_record = FinalRow {
+            repo: owner.map(|o| o.repo.clone()).unwrap_or(non_eks.repo_name),
+            last_committer: owner.map(|o| o.last_committer.clone()).unwrap_or(non_eks.last_committer),
+            last_commit_date: owner.map(|o| o.last_commit_date.clone()).unwrap_or(non_eks.last_commit_date),
+            updated_at: owner.map(|o| o.updated_at.clone()).unwrap_or_default(),
+            primary_owner: owner.map(|o| o.primary_owner.clone()).unwrap_or_default(),
+            team_owners_admin_maintain: owner.map(|o| o.team_owners_admin_maintain.clone()).unwrap_or_default(),
+            visibility: owner.map(|o| o.visibility.clone()).unwrap_or_default(),
+            platform: non_eks.platform,
+            cicd: non_eks.cicd,
+            has_tests: non_eks.has_tests,
+            test_framework: non_eks.test_framework,
+            repo_url: non_eks.repo_url,
+            is_archived: non_eks.is_archived,
+        };
+        wtr.serialize(final_record)?;
+    }
+
+    wtr.flush()?;
+    println!("Consolidation complete. Saved to: ~/Documents/csv/github/ghub_consolidated.csv");
+    Ok(())
 }
