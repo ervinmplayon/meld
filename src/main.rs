@@ -15,7 +15,7 @@ struct RepoOwnerRow {
 }
 
 #[derive(Debug, Deserialize)]
-struct NonEksROw {
+struct NonEksRow {
     #[serde(rename = "Repo Name")]
     repo_name: String,
     #[serde(rename = "Platform")]
