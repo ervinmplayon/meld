@@ -20,7 +20,7 @@ struct NonEksRow {
     repo_name: String,
     #[serde(rename = "Platform")]
     platform: String,
-    #[serde(rename = "CI/CD")]
+    #[serde(rename = "CI/CD Platform")]
     cicd: String,
     #[serde(rename = "Has Tests")]
     has_tests: String,
