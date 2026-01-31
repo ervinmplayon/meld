@@ -69,11 +69,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         let record: RepoOwnerRow = result?;
         let key = record.repo.to_lowercase();
 
+        // Parse ISO 8601: 2025-10-15T14:37:19Z
+        let current_dt = record.last_commit_date.parse::<DateTime<Utc>>().unwrap_or(Utc::now());
+
         // Returns Some(&value), unwraps that value and binds it to a new local variable
         if let Some(existing) = owners_map.get(&key) {
             // Parse dates to compare which is more recent
-            let current_dt = NaiveDate::parse_from_str(&record.last_commit_date, "%Y-%m-%d").unwrap_or(NaiveDate::MIN);
-            let existing_dt = NaiveDate::parse_from_str(&existing.last_commit_date, "%Y-%m-%d").unwrap_or(NaiveDate::MIN);
+            let existing_dt = existing.last_commit_date.parse::<DateTime<Utc>>().unwrap_or(Utc::now());
 
             if current_dt > existing_dt {
                 owners_map.insert(key, record);
