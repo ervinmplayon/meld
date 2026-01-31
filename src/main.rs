@@ -25,7 +25,7 @@ struct NonEksRow {
     #[serde(rename = "Has Tests")]
     has_tests: String,
     #[serde(rename = "Test Framework")]
-    test_framework: String,
+    test_setup: String,
     #[serde(rename = "Repo URL")]
     repo_url: String,
     #[serde(rename = "Is Archived")]
@@ -50,7 +50,7 @@ struct FinalRow {
     platform: String,
     cicd: String,
     has_tests: String,
-    test_framework: String,
+    test_setup: String,
     repo_url: String,
     is_archived: String,
 }
@@ -105,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             platform: non_eks.platform,
             cicd: non_eks.cicd,
             has_tests: non_eks.has_tests,
-            test_framework: non_eks.test_framework,
+            test_setup: non_eks.test_setup,
             repo_url: non_eks.repo_url,
             is_archived: non_eks.is_archived,
         };
