@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
-use chrono::NaiveDate;
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, Deserialize, Clone)]
 struct RepoOwnerRow {
